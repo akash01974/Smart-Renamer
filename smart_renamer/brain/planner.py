@@ -17,13 +17,20 @@ class Planner:
             if not filepath.is_file():
                 continue
             metadata = self.metadata_extractor.extract(filepath)
-            tags, confidence = self.classifier.classify(metadata)
-            metadata_summary = self._build_summary(metadata, tags)
-            if vision_router and confidence < 0.6:
+            classifier_tags, confidence = self.classifier.classify(metadata)
+            if vision_router and vision_router.is_available():
                 vision_tags = vision_router.enrich(filepath)
                 if vision_tags:
                     tags = vision_tags
+                    type_tag = next((t for t in classifier_tags if t in {"photo", "wallpaper", "screenshot", "meme", "video", "audio"}), None)
+                    if type_tag:
+                        tags.append(type_tag)
                     confidence = 0.85
+                else:
+                    tags = classifier_tags
+            else:
+                tags = classifier_tags
+            metadata_summary = self._build_summary(metadata, tags)
             file_id = self.metadata_extractor.compute_file_id(filepath)
             date_str = ""
             if metadata.exif_date_taken:

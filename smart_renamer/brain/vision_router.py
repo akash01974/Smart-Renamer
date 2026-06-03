@@ -57,7 +57,7 @@ class VisionRouter:
             payload = {
                 "contents": [{
                     "parts": [
-                        {"text": "Describe this image in 3-5 comma-separated keywords focusing on the subject, setting, and theme. Return only keywords."},
+                        {"text": "What is in this image? Identify the main subject (character, scene, object), setting, and theme. Return 3-5 comma-separated keywords only."},
                         {"inline_data": {"mime_type": mime, "data": img_data}}
                     ]
                 }]
