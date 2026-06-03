@@ -49,7 +49,7 @@ class Classifier:
         if m.dimensions is None:
             return False
         w, h = m.dimensions
-        return (w >= 1920 and h >= 1080) and not self._has_exif_camera(m)
+        return (w >= 1920 and h >= 1080) and not self._has_exif_camera(m) and m.dimensions not in self.SCREEN_RESOLUTIONS
 
     def _is_meme(self, m: FileMetadata) -> bool:
         if m.dimensions is None:

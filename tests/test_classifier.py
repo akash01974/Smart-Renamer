@@ -87,7 +87,7 @@ def test_dated_tag_with_exif_date():
     assert "nikon" in tags
 
 
-def test_wallpaper_excludes_screen_resolutions():
+def test_screenshot_priority_over_wallpaper():
     meta = FileMetadata(
         path=Path("wall.png"),
         dimensions=(1920, 1080),
