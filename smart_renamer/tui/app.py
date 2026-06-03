@@ -99,7 +99,7 @@ class SmartRenamerApp(App):
         self.target_dir = target_dir
         self.config = Config()
         self.planner = Planner(template=self.config.template)
-        self.vision_router = VisionRouter() if self.config.gemini_enabled else None
+        self.vision_router = VisionRouter(api_key=self.config.gemini_api_key) if self.config.gemini_enabled else None
         self.validator = Validator()
         self.executor = Executor()
         self.plans = []
@@ -124,7 +124,8 @@ class SmartRenamerApp(App):
         files = sorted(self.target_dir.iterdir())
         files = [f for f in files if f.is_file() and f.suffix.lower() in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".mp4", ".mov", ".avi", ".mkv", ".mp3", ".wav", ".flac"}]
         self.plans = self.planner.plan(files, self.vision_router)
-        self.status_bar.status = f"Ready: {len(self.plans)} files loaded"
+        gemini_status = " [AI]" if self.vision_router and self.vision_router.is_available() else ""
+        self.status_bar.status = f"Ready: {len(self.plans)} files loaded{gemini_status}"
         table = self.query_one(FileTable)
         table.plans = self.plans
         table.approved = {p.file_id: True for p in self.plans}
