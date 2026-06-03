@@ -4,6 +4,6 @@ dry_run = true
 recursive = false
 
 [gemini]
-enabled = false
-api_key = ""
+enabled = true
+api_key = ""  # Set via GEMINI_API_KEY env var for security
 confidence_threshold = 0.6
