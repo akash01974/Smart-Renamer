@@ -5,6 +5,7 @@ from textual.widgets import Header, Footer, DataTable, Static, Button, Label
 from textual.screen import Screen
 from textual.binding import Binding
 from textual.reactive import reactive
+from textual.worker import get_current_worker
 from smart_renamer.brain.planner import Planner
 from smart_renamer.brain.vision_router import VisionRouter
 from smart_renamer.validator import Validator
@@ -123,13 +124,38 @@ class SmartRenamerApp(App):
         self.status_bar.status = "Scanning files..."
         files = sorted(self.target_dir.iterdir())
         files = [f for f in files if f.is_file() and f.suffix.lower() in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".mp4", ".mov", ".avi", ".mkv", ".mp3", ".wav", ".flac"}]
-        self.plans = self.planner.plan(files, self.vision_router)
-        gemini_status = " [AI]" if self.vision_router and self.vision_router.is_available() else ""
-        self.status_bar.status = f"Ready: {len(self.plans)} files loaded{gemini_status}"
+        self.plans = self.planner.plan(files, None)
+        has_ai = self.vision_router is not None and self.vision_router.is_available()
+        self.status_bar.status = f"Ready: {len(self.plans)} files loaded{' [AI]' if has_ai else ''}"
         table = self.query_one(FileTable)
         table.plans = self.plans
         table.approved = {p.file_id: True for p in self.plans}
         table.refresh_table()
+        if has_ai:
+            self.run_worker(self._enrich_all, thread=True, exclusive=True)
+
+    def _enrich_all(self) -> None:
+        worker = get_current_worker()
+        for i, plan in enumerate(self.plans):
+            if worker.is_cancelled:
+                return
+            tags = self.vision_router.enrich(plan.old_path)
+            if tags:
+                self.call_from_thread(self._apply_vision, i, plan, tags)
+
+    def _apply_vision(self, idx: int, plan, vision_tags: list[str]) -> None:
+        type_tag = next((t for t in plan.tags if t in {"photo", "wallpaper", "screenshot", "meme", "video", "audio"}), None)
+        if type_tag:
+            vision_tags.append(type_tag)
+        md = self.planner.metadata_extractor.extract(plan.old_path)
+        date_str = md.exif_date_taken.strftime("%Y-%m-%d") if md.exif_date_taken else ""
+        summary = self.planner._build_summary(md, vision_tags)
+        new_name = self.planner.template_engine.generate(vision_tags, idx + 1, md.file_type, summary, date=date_str)
+        plan.tags = vision_tags
+        plan.proposed_new_name = new_name
+        plan.confidence = 0.85
+        plan.metadata_summary = summary
+        self.query_one(FileTable).refresh_table()
 
     def action_toggle_file(self) -> None:
         table = self.query_one(FileTable)
