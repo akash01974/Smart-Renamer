@@ -15,14 +15,14 @@ class Config:
 
     def _load(self, path: Path | None) -> None:
         paths_to_try = [
-            path,
-            Path.cwd() / "smart_renamer.toml",
             Path.home() / ".config" / "smart_renamer" / "config.toml",
+            Path.cwd() / "smart_renamer.toml",
         ]
+        if path:
+            paths_to_try.append(path)
         for p in paths_to_try:
             if p and p.exists():
                 self._parse(p)
-                return
 
     def _parse(self, path: Path) -> None:
         data = tomllib.loads(path.read_text())
@@ -31,6 +31,11 @@ class Config:
         self.dry_run = general.get("dry_run", self.dry_run)
         self.recursive = general.get("recursive", self.recursive)
         gemini = data.get("gemini", {})
-        self.gemini_enabled = gemini.get("enabled", False)
-        self.gemini_api_key = gemini.get("api_key", "") or os.environ.get("GEMINI_API_KEY", "")
-        self.confidence_threshold = gemini.get("confidence_threshold", self.confidence_threshold)
+        if gemini.get("enabled") is not None:
+            self.gemini_enabled = gemini["enabled"]
+        if gemini.get("confidence_threshold") is not None:
+            self.confidence_threshold = gemini["confidence_threshold"]
+        if gemini.get("api_key"):
+            self.gemini_api_key = gemini["api_key"]
+        if not self.gemini_api_key:
+            self.gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
