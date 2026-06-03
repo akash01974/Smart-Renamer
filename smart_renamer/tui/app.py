@@ -122,6 +122,11 @@ class SmartRenamerApp(App):
         files = [f for f in files if f.is_file() and f.suffix.lower() in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".mp4", ".mov", ".avi", ".mkv", ".mp3", ".wav", ".flac"}]
         self.plans = self.planner.plan(files, self.vision_router)
         self.status_bar.status = f"Ready: {len(self.plans)} files loaded"
+        table = self.query_one(FileTable)
+        table.clear()
+        table.plans = self.plans
+        table.approved = {p.file_id: True for p in self.plans}
+        table.on_mount()
 
     def action_toggle_file(self) -> None:
         table = self.query_one(FileTable)
