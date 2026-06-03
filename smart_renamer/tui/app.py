@@ -19,6 +19,10 @@ class FileTable(DataTable):
         self.approved = {p.file_id: True for p in plans}
 
     def on_mount(self) -> None:
+        self.refresh_table()
+
+    def refresh_table(self) -> None:
+        self.clear()
         self.add_columns("\u2713", "Old Name", "Proposed Name", "Confidence", "Tags")
         for plan in self.plans:
             check = "\u2713" if self.approved[plan.file_id] else " "
@@ -27,8 +31,7 @@ class FileTable(DataTable):
 
     def toggle_file(self, file_id: str) -> None:
         self.approved[file_id] = not self.approved[file_id]
-        self.clear()
-        self.on_mount()
+        self.refresh_table()
 
 
 class PreviewPanel(Vertical):
@@ -123,10 +126,9 @@ class SmartRenamerApp(App):
         self.plans = self.planner.plan(files, self.vision_router)
         self.status_bar.status = f"Ready: {len(self.plans)} files loaded"
         table = self.query_one(FileTable)
-        table.clear()
         table.plans = self.plans
         table.approved = {p.file_id: True for p in self.plans}
-        table.on_mount()
+        table.refresh_table()
 
     def action_toggle_file(self) -> None:
         table = self.query_one(FileTable)
@@ -138,8 +140,7 @@ class SmartRenamerApp(App):
         table = self.query_one(FileTable)
         for plan in self.plans:
             table.approved[plan.file_id] = True
-        table.clear()
-        table.on_mount()
+        table.refresh_table()
 
     def action_execute(self) -> None:
         table = self.query_one(FileTable)
@@ -156,8 +157,7 @@ class SmartRenamerApp(App):
         ok = sum(1 for r in results if r.success)
         self.status_bar.status = f"Done: {ok}/{len(results)} renamed"
         self.plans = [p for p in self.plans if p.file_id not in {r.file_id for r in results if r.success}]
-        table.clear()
-        table.on_mount()
+        table.refresh_table()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-toggle":
