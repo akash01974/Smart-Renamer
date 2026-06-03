@@ -22,3 +22,6 @@ def test_planner_generates_renames_for_files(tmp_path):
         assert plan.proposed_new_name.endswith((".jpg", ".png"))
         assert plan.confidence > 0
         assert len(plan.file_id) == 12
+
+
+
