@@ -1,0 +1,9 @@
+[general]
+template = "{tags}_{index}"
+dry_run = true
+recursive = false
+
+[gemini]
+enabled = false
+api_key = ""
+confidence_threshold = 0.6
