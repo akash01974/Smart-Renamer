@@ -1,0 +1,11 @@
+[project]
+name = "smart-renamer"
+version = "0.1.0"
+description = "AI-powered bulk file renamer with TUI"
+requires-python = ">=3.11"
+dependencies = [
+    "textual>=1.0.0",
+    "pydantic>=2.0.0",
+    "Pillow>=10.0.0",
+    "httpx>=0.25.0",
+]
